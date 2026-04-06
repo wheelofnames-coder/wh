@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wheel Clone (Weighted Hidden)</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(to right, #dfe6f0, #f4d6d6);
+}
+
+/* TOP BAR */
+.topbar {
+  height: 60px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-weight: 600;
+}
+
+/* LAYOUT */
+.container {
+  display: flex;
+}
+
+/* WHEEL */
+.wheel-area {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+canvas {
+  border-radius: 50%;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 320px;
+  background: #fff;
+  padding: 15px;
+  border-left: 1px solid #ddd;
+}
+
+.entry {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.entry input {
+  width: 70%;
+}
+
+/* BUTTONS */
+button {
+  background: #3b6ef5;
+  color: white;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.small-btn {
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+/* MODAL */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  width: 350px;
+  border-radius: 10px;
+  display: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal input {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.overlay {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.3);
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">wheelofnames.com (clone)</div>
+
+<div class="container">
+
+  <!-- WHEEL -->
+  <div class="wheel-area">
+    <canvas id="wheel" width="450" height="450"></canvas>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <h3>Entries</h3>
+    <div id="entries"></div>
+
+    <button onclick="addEntry()">Add entry</button>
+    <button onclick="spin()">SPIN</button>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="overlay" onclick="closeModal()"></div>
+
+<div class="modal" id="modal">
+  <h3>Advanced</h3>
+
+  <label>Text</label>
+  <input id="modalName">
+
+  <label>Weight (hidden probability)</label>
+  <input type="number" id="modalWeight">
+
+  <button onclick="saveModal()">OK</button>
+</div>
+
+<script>
+let items = [
+  {name:"Elizabeth", weight:2},
+  {name:"Rhia", weight:1},
+  {name:"Wendy", weight:1},
+  {name:"Olivia", weight:1}
+];
+
+let selectedIndex = null;
+
+function renderList(){
+  let div = document.getElementById("entries");
+  div.innerHTML = "";
+
+  items.forEach((item,i)=>{
+    div.innerHTML += `
+      <div class="entry">
+        <input value="${item.name}" onchange="items[${i}].name=this.value; drawWheel()">
+        <button class="small-btn" onclick="openModal(${i})">⚙️</button>
+      </div>
+    `;
+  });
+}
+
+function addEntry(){
+  items.push({name:"New", weight:1});
+  renderList();
+  drawWheel();
+}
+
+/* MODAL */
+function openModal(i){
+  selectedIndex = i;
+  document.getElementById("modalName").value = items[i].name;
+  document.getElementById("modalWeight").value = items[i].weight;
+
+  document.querySelector(".modal").style.display="block";
+  document.querySelector(".overlay").style.display="block";
+}
+
+function closeModal(){
+  document.querySelector(".modal").style.display="none";
+  document.querySelector(".overlay").style.display="none";
+}
+
+function saveModal(){
+  items[selectedIndex].name = document.getElementById("modalName").value;
+  items[selectedIndex].weight = parseFloat(document.getElementById("modalWeight").value);
+
+  closeModal();
+  renderList();
+  drawWheel();
+}
+
+/* WHEEL */
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+function drawWheel(){
+  let n = items.length;
+  let arc = (2*Math.PI)/n;
+
+  ctx.clearRect(0,0,450,450);
+
+  for(let i=0;i<n;i++){
+    ctx.beginPath();
+    ctx.fillStyle = ["#3b6ef5","#e74c3c","#2ecc71","#f1c40f"][i%4];
+    ctx.moveTo(225,225);
+    ctx.arc(225,225,225,i*arc,(i+1)*arc);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(225,225);
+    ctx.rotate(i*arc + arc/2);
+    ctx.fillStyle="white";
+    ctx.fillText(items[i].name, 100, 5);
+    ctx.restore();
+  }
+}
+
+/* WEIGHTED RESULT (NOT BASED ON SLICE SIZE) */
+function pick(){
+  let total = items.reduce((s,i)=>s+i.weight,0);
+  let r = Math.random()*total;
+
+  for(let item of items){
+    if(r < item.weight) return item;
+    r -= item.weight;
+  }
+}
+
+/* SPIN */
+function spin(){
+  let chosen = pick();
+  let index = items.findIndex(i=>i.name===chosen.name);
+
+  let arc = 360/items.length;
+  let target = 360*5 + (360 - index*arc - arc/2);
+
+  let start=null;
+
+  function anim(t){
+    if(!start) start=t;
+    let p=t-start;
+
+    let rot = easeOut(p,0,target,3000);
+    canvas.style.transform=`rotate(${rot}deg)`;
+
+    if(p<3000) requestAnimationFrame(anim);
+    else alert("Result: "+chosen.name);
+  }
+
+  requestAnimationFrame(anim);
+}
+
+function easeOut(t,b,c,d){
+  t/=d;
+  return -c*t*(t-2)+b;
+}
+
+renderList();
+drawWheel();
+</script>
+
+</body>
+</html>
