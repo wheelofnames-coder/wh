@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Wheel of Names with Custom Probabilities</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      /* Basic Styling */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+      }
+
+      .container {
+        text-align: center;
+      }
+
+      .wheel-container {
+        position: relative;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        border: 10px solid #333;
+        margin-bottom: 30px;
+        background-image: conic-gradient(#ff6b6b 0deg, #ff6b6b 90deg, #4e9dff 90deg, #4e9dff 180deg);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .button-container {
+        margin-top: 20px;
+      }
+
+      .name-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        max-height: 150px;
+        overflow-y: auto;
+      }
+
+      .name-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .name-item input {
+        width: 50px;
+      }
+
+      .wheel {
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        border: 10px solid #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="wheel-container">
+        <div id="wheel" class="wheel"></div>
+      </div>
+
+      <div class="button-container">
+        <button onclick="spinWheel()">Spin the Wheel!</button>
+      </div>
+
+      <h3>Entries and Probabilities</h3>
+      <ul class="name-list" id="nameList">
+        <li class="name-item">
+          <span>John</span>
+          <input type="number" value="1" min="0" id="probJohn" onchange="updateProbabilities()">
+        </li>
+        <li class="name-item">
+          <span>Jane</span>
+          <input type="number" value="1" min="0" id="probJane" onchange="updateProbabilities()">
+        </li>
+        <li class="name-item">
+          <span>Doe</span>
+          <input type="number" value="1" min="0" id="probDoe" onchange="updateProbabilities()">
+        </li>
+      </ul>
+    </div>
+
+    <script>
+      const names = [
+        { name: 'John', probability: 1 },
+        { name: 'Jane', probability: 1 },
+        { name: 'Doe', probability: 1 }
+      ];
+
+      let wheelRotation = 0;
+
+      // Update the probabilities based on input
+      function updateProbabilities() {
+        names[0].probability = parseInt(document.getElementById('probJohn').value, 10);
+        names[1].probability = parseInt(document.getElementById('probJane').value, 10);
+        names[2].probability = parseInt(document.getElementById('probDoe').value, 10);
+      }
+
+      // Generate the wheel slices based on the probabilities
+      function generateWheel() {
+        const totalProbability = names.reduce((acc, curr) => acc + curr.probability, 0);
+        let currentDegree = 0;
+        let segments = '';
+
+        names.forEach(entry => {
+          const sliceAngle = (entry.probability / totalProbability) * 360;
+          segments += `${entry.name} ${sliceAngle}deg, `;
+        });
+
+        // Remove last comma and space
+        segments = segments.slice(0, -2);
+
+        // Update the conic gradient to reflect the names and probabilities
+        document.getElementById('wheel').style.backgroundImage = `conic-gradient(${segments})`;
+      }
+
+      // Spin the wheel based on updated probabilities
+      function spinWheel() {
+        // Random angle based on number of names
+        const totalProbability = names.reduce((acc, curr) => acc + curr.probability, 0);
+        const randomAngle = Math.random() * 360;
+
+        // Animate the wheel rotation
+        wheelRotation += randomAngle;
+        document.getElementById('wheel').style.transition = 'transform 3s ease-out';
+        document.getElementById('wheel').style.transform = `rotate(${wheelRotation}deg)`;
+
+        // Delay resetting the transition after the spin
+        setTimeout(() => {
+          document.getElementById('wheel').style.transition = 'none';
+        }, 3000);
+
+        // Log the winner based on the random angle
+        const winningAngle = (randomAngle + 360) % 360;
+        let currentDegree = 0;
+        names.forEach(entry => {
+          const sliceAngle = (entry.probability / totalProbability) * 360;
+          currentDegree += sliceAngle;
+          if (winningAngle < currentDegree) {
+            console.log(`${entry.name} wins!`);
+            alert(`${entry.name} wins!`);
+          }
+        });
+      }
+
+      // Initialize the wheel and update segments
+      generateWheel();
+    </script>
+  </body>
+</html>
