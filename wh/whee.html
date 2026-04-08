@@ -1,0 +1,453 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weighted Wheel of Names</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link id="heading-font-link" href="https://fonts.googleapis.com/css2?family=Righteous:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link id="body-font-link" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              heading: ['var(--font-heading-name)', 'cursive'],
+              body: ['var(--font-body-name)', 'monospace'],
+            },
+            spacing: {
+              base: 'var(--space-base)',
+            },
+            borderRadius: {
+              small: 'var(--radius-small)',
+              large: 'var(--radius-large)',
+            },
+            boxShadow: {
+              custom: 'var(--shadow-custom)',
+              'custom-hover': 'var(--shadow-custom-hover)',
+            },
+          }
+        }
+      }
+    </script>
+    
+    <style>
+      :root {
+        /* Typography */
+        --font-heading-name: 'Righteous';
+        --font-body-name: 'Space Mono';
+        --font-heading: 'Righteous', cursive;
+        --font-body: 'Space Mono', monospace;
+        --letter-spacing-heading: 0.75px;
+        --letter-spacing-body: 0px;
+        
+        /* Spacing */
+        --space-base: 1rem;
+        
+        /* Borders */
+        --radius-small: 8px;
+        --radius-large: 16px;
+        --border-width: 3px;
+        
+        /* Shadows */
+        --shadow-color: 20 20 20;
+        --shadow-offset-x: 6px;
+        --shadow-offset-y: 6px;
+        --shadow-blur: 0px;
+        --shadow-spread: 0px;
+        --shadow-opacity: 1;
+        --shadow-custom: 6px 6px 0px rgb(var(--shadow-color));
+        --shadow-custom-hover: 2px 2px 0px rgb(var(--shadow-color));
+      }
+      
+      /* Custom Scrollbar for Textarea */
+      textarea::-webkit-scrollbar {
+        width: 8px;
+      }
+      textarea::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: var(--radius-small);
+      }
+      textarea::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: var(--radius-small);
+      }
+      textarea::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    </style>
+</head>
+<body class="font-body bg-neutral-50 text-neutral-900 min-h-screen flex flex-col" style="height: auto; min-height: 100%;">
+
+    <!-- Header -->
+    <header class="bg-white border-b-4 border-neutral-900 py-4 px-6 shadow-custom mb-8">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center text-white font-heading text-xl">W</div>
+                <h1 class="font-heading text-2xl md:text-3xl text-neutral-900 tracking-wide">Weighted Wheel</h1>
+            </div>
+            <p class="hidden md:block text-neutral-500 text-sm">Equal slices, custom probabilities.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-12 flex flex-col lg:flex-row gap-8 lg:gap-12">
+        
+        <!-- Left Panel: The Wheel -->
+        <section class="flex-1 flex flex-col items-center justify-center bg-white p-6 rounded-large border-4 border-neutral-900 shadow-custom max-h-[800px]">
+            <h2 class="font-heading text-xl text-neutral-800 mb-6 w-full text-center">Click center to spin!</h2>
+            
+            <div class="relative w-full max-w-[500px] aspect-square">
+                <!-- Canvas for Wheel -->
+                <canvas id="wheelCanvas" width="500" height="500" class="w-full h-full rounded-full border-4 border-neutral-900 shadow-inner"></canvas>
+                
+                <!-- Center Spin Button -->
+                <button id="spinBtn" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 md:w-24 md:h-24 bg-white border-4 border-neutral-900 rounded-full shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all flex items-center justify-center z-20 cursor-pointer group">
+                    <span class="font-heading text-xl md:text-2xl text-neutral-900 group-hover:scale-110 transition-transform">SPIN</span>
+                </button>
+                
+                <!-- Pointer (Right Side) -->
+                <div class="absolute top-1/2 right-[-10px] md:right-[-20px] -translate-y-1/2 z-30 drop-shadow-md">
+                    <!-- CSS Triangle pointing left -->
+                    <div class="w-0 h-0 border-y-[15px] border-y-transparent border-r-[30px] border-r-neutral-900"></div>
+                    <div class="w-0 h-0 border-y-[10px] border-y-transparent border-r-[20px] border-r-white absolute top-[5px] left-[6px]"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Controls & Inputs -->
+        <section class="w-full lg:w-[400px] flex flex-col gap-6 max-h-[800px]">
+            <div class="bg-white p-6 rounded-large border-4 border-neutral-900 shadow-custom flex-1 flex flex-col">
+                <div class="mb-4">
+                    <h2 class="font-heading text-2xl text-neutral-900 mb-2">Entries</h2>
+                    <p class="text-neutral-600 text-sm mb-4">
+                        Enter names below (one per line).<br>
+                        To change probability, add <strong>:weight</strong> after the name.<br>
+                        <em>Example: Alice:5 (5x more likely to win than a normal entry)</em>
+                    </p>
+                </div>
+                
+                <textarea id="entriesInput" class="flex-1 w-full min-h-[300px] p-4 bg-neutral-50 border-2 border-neutral-300 rounded-small font-body text-neutral-800 focus:outline-none focus:border-neutral-900 focus:ring-2 focus:ring-neutral-200 resize-none transition-colors" spellcheck="false">
+Alice:1
+Bob:1
+Charlie:5
+Diana:1
+Eve:10</textarea>
+                
+                <div class="mt-6 flex gap-4">
+                    <button id="updateBtn" class="flex-1 bg-neutral-900 text-white font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg">
+                        Update Wheel
+                    </button>
+                    <button id="shuffleBtn" class="bg-white text-neutral-900 font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg" title="Shuffle Entries">
+                        Shuffle
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Stats Card -->
+            <div class="bg-neutral-100 p-5 rounded-large border-4 border-neutral-900 shadow-custom">
+                <h3 class="font-heading text-lg text-neutral-900 mb-3">Current Probabilities</h3>
+                <div id="statsContainer" class="max-h-[150px] overflow-y-auto text-sm text-neutral-700 space-y-1">
+                    <!-- Stats populated by JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Winner Modal Overlay -->
+    <div id="winnerModal" class="fixed inset-0 bg-neutral-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white p-8 md:p-12 rounded-large border-4 border-neutral-900 shadow-[12px_12px_0px_rgb(20,20,20)] max-w-lg w-full text-center transform scale-90 transition-transform duration-300" id="winnerModalContent">
+            <h2 class="font-heading text-3xl md:text-4xl text-neutral-900 mb-2">We have a winner!</h2>
+            <p class="text-neutral-500 mb-8">The wheel has spoken.</p>
+            
+            <div class="py-6 px-4 bg-neutral-100 rounded-small border-2 border-neutral-200 mb-8">
+                <span id="winnerText" class="font-heading text-4xl md:text-5xl text-neutral-900 break-words">Winner Name</span>
+            </div>
+            
+            <button id="closeModalBtn" class="bg-neutral-900 text-white font-heading py-3 px-8 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-xl w-full md:w-auto">
+                Awesome!
+            </button>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const canvas = document.getElementById('wheelCanvas');
+            const ctx = canvas.getContext('2d');
+            const entriesInput = document.getElementById('entriesInput');
+            const updateBtn = document.getElementById('updateBtn');
+            const shuffleBtn = document.getElementById('shuffleBtn');
+            const spinBtn = document.getElementById('spinBtn');
+            const statsContainer = document.getElementById('statsContainer');
+            const winnerModal = document.getElementById('winnerModal');
+            const winnerModalContent = document.getElementById('winnerModalContent');
+            const winnerText = document.getElementById('winnerText');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+
+            // State
+            let entries = [];
+            let currentRotation = 0; // in radians
+            let isSpinning = false;
+            
+            // Vibrant color palette for the wheel
+            const colors = [
+                '#FF6B6B', '#4ECDC4', '#FFE66D', '#FF9F1C', 
+                '#2AB7CA', '#F0B67F', '#FE4A90', '#55DDE0', 
+                '#F6E8EA', '#C18C5D', '#49DCB1', '#8E7DBE'
+            ];
+
+            // Initialize
+            parseEntries();
+            
+            // Event Listeners
+            updateBtn.addEventListener('click', parseEntries);
+            shuffleBtn.addEventListener('click', shuffleEntries);
+            spinBtn.addEventListener('click', spinWheel);
+            closeModalBtn.addEventListener('click', closeModal);
+            
+            // Functions
+            function parseEntries() {
+                if (isSpinning) return;
+                
+                const text = entriesInput.value;
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                
+                entries = lines.map(line => {
+                    const parts = line.split(':');
+                    const name = parts[0].trim();
+                    let weight = 1;
+                    
+                    if (parts.length > 1) {
+                        const parsedWeight = parseFloat(parts[1]);
+                        if (!isNaN(parsedWeight) && parsedWeight > 0) {
+                            weight = parsedWeight;
+                        }
+                    }
+                    
+                    return { name, weight };
+                });
+                
+                if (entries.length === 0) {
+                    entries = [{ name: 'Add some names!', weight: 1 }];
+                }
+                
+                updateStats();
+                drawWheel();
+            }
+            
+            function shuffleEntries() {
+                if (isSpinning) return;
+                
+                // Fisher-Yates shuffle
+                for (let i = entries.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [entries[i], entries[j]] = [entries[j], entries[i]];
+                }
+                
+                // Update textarea to reflect new order
+                entriesInput.value = entries.map(e => e.weight !== 1 ? `${e.name}:${e.weight}` : e.name).join('\n');
+                
+                updateStats();
+                drawWheel();
+            }
+            
+            function updateStats() {
+                const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0);
+                
+                statsContainer.innerHTML = '';
+                
+                // Sort by weight descending for stats display
+                const sortedEntries = [...entries].sort((a, b) => b.weight - a.weight);
+                
+                sortedEntries.forEach(entry => {
+                    const percentage = ((entry.weight / totalWeight) * 100).toFixed(1);
+                    
+                    const row = document.createElement('div');
+                    row.className = 'flex justify-between items-center py-1 border-b border-neutral-200 last:border-0';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'font-medium truncate pr-2';
+                    nameSpan.textContent = entry.name;
+                    
+                    const probSpan = document.createElement('span');
+                    probSpan.className = 'whitespace-nowrap font-body bg-neutral-200 px-2 py-0.5 rounded text-xs';
+                    probSpan.textContent = `${percentage}% (w:${entry.weight})`;
+                    
+                    row.appendChild(nameSpan);
+                    row.appendChild(probSpan);
+                    statsContainer.appendChild(row);
+                });
+            }
+            
+            function drawWheel() {
+                const width = canvas.width;
+                const height = canvas.height;
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const radius = Math.min(centerX, centerY) - 10; // 10px padding
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                if (entries.length === 0) return;
+                
+                // CRITICAL: Every slice gets exactly the same visual angle
+                const sliceAngle = (2 * Math.PI) / entries.length;
+                
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(currentRotation);
+                
+                for (let i = 0; i < entries.length; i++) {
+                    const startAngle = i * sliceAngle;
+                    const endAngle = (i + 1) * sliceAngle;
+                    
+                    // Draw slice background
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.arc(0, 0, radius, startAngle, endAngle);
+                    ctx.closePath();
+                    
+                    ctx.fillStyle = colors[i % colors.length];
+                    ctx.fill();
+                    
+                    // Draw slice border
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#171717'; // neutral-900
+                    ctx.stroke();
+                    
+                    // Draw text
+                    ctx.save();
+                    // Rotate to the center of the slice
+                    ctx.rotate(startAngle + sliceAngle / 2);
+                    
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#171717'; // Dark text for contrast
+                    
+                    // Adjust font size based on number of entries and text length
+                    let fontSize = entries.length > 20 ? 12 : entries.length > 10 ? 16 : 22;
+                    ctx.font = `600 ${fontSize}px 'Space Mono', monospace`;
+                    
+                    // Add white outline for better readability on all colors
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#ffffff';
+                    
+                    const textX = radius - 30; // Padding from edge
+                    
+                    // Truncate text if too long
+                    let displayText = entries[i].name;
+                    if (displayText.length > 15) {
+                        displayText = displayText.substring(0, 13) + '...';
+                    }
+                    
+                    ctx.strokeText(displayText, textX, 0);
+                    ctx.fillText(displayText, textX, 0);
+                    
+                    ctx.restore();
+                }
+                
+                ctx.restore();
+            }
+            
+            function spinWheel() {
+                if (isSpinning || entries.length === 0) return;
+                isSpinning = true;
+                
+                // 1. Determine the winner based on WEIGHTED probability
+                const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0);
+                let randomValue = Math.random() * totalWeight;
+                let winnerIndex = 0;
+                
+                for (let i = 0; i < entries.length; i++) {
+                    randomValue -= entries[i].weight;
+                    if (randomValue <= 0) {
+                        winnerIndex = i;
+                        break;
+                    }
+                }
+                
+                // 2. Calculate angles
+                // The pointer is at 0 radians (right side).
+                // We want the center of the winning slice to land at 0 radians.
+                const sliceAngle = (2 * Math.PI) / entries.length;
+                const winnerCenterAngle = (winnerIndex * sliceAngle) + (sliceAngle / 2);
+                
+                // Normalize current rotation to 0-2PI
+                const currentMod = currentRotation % (2 * Math.PI);
+                
+                // Target angle within one rotation to put winner at 0 rad
+                // Since wheel rotates clockwise (increasing angle), to move a slice backwards to 0, 
+                // we need to rotate by (2PI - winnerCenterAngle)
+                const targetMod = (2 * Math.PI) - winnerCenterAngle;
+                
+                // Calculate shortest forward distance to target
+                let diff = targetMod - currentMod;
+                if (diff < 0) diff += 2 * Math.PI;
+                
+                // Add extra spins (e.g., 8 full rotations)
+                const extraSpins = 8 * 2 * Math.PI;
+                const targetRotation = currentRotation + diff + extraSpins;
+                
+                // 3. Animate
+                const duration = 5000; // 5 seconds
+                const startTime = performance.now();
+                const startRotation = currentRotation;
+                
+                function animate(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    let progress = elapsed / duration;
+                    
+                    if (progress >= 1) {
+                        progress = 1;
+                        currentRotation = targetRotation;
+                        drawWheel();
+                        isSpinning = false;
+                        showWinner(entries[winnerIndex].name);
+                        return;
+                    }
+                    
+                    // Ease Out Quart function for smooth deceleration
+                    const easeOut = 1 - Math.pow(1 - progress, 4);
+                    
+                    currentRotation = startRotation + (targetRotation - startRotation) * easeOut;
+                    drawWheel();
+                    
+                    requestAnimationFrame(animate);
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            function showWinner(name) {
+                winnerText.textContent = name;
+                winnerModal.classList.remove('hidden');
+                
+                // Small delay to allow display:block to apply before animating opacity
+                setTimeout(() => {
+                    winnerModal.classList.remove('opacity-0');
+                    winnerModalContent.classList.remove('scale-90');
+                    winnerModalContent.classList.add('scale-100');
+                }, 10);
+                
+                // Optional: Trigger confetti if a library was included, 
+                // but we'll stick to the clean UI modal for now.
+            }
+            
+            function closeModal() {
+                winnerModal.classList.add('opacity-0');
+                winnerModalContent.classList.remove('scale-100');
+                winnerModalContent.classList.add('scale-90');
+                
+                setTimeout(() => {
+                    winnerModal.classList.add('hidden');
+                }, 300); // Match transition duration
+            }
+        });
+    </script>
+</body>
+</html>
