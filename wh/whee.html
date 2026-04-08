@@ -4,8 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wheel of Names</title>
+    <title>Weighted Wheel of Names</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <link id="heading-font-link" href="https://fonts.googleapis.com/css2?family=Righteous:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link id="body-font-link" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -63,19 +66,19 @@
         --shadow-custom-hover: 2px 2px 0px rgb(var(--shadow-color));
       }
       
-      /* Custom Scrollbar for Textarea */
-      textarea::-webkit-scrollbar {
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
         width: 8px;
       }
-      textarea::-webkit-scrollbar-track {
+      ::-webkit-scrollbar-track {
         background: #f1f1f1;
         border-radius: var(--radius-small);
       }
-      textarea::-webkit-scrollbar-thumb {
+      ::-webkit-scrollbar-thumb {
         background: #cbd5e1;
         border-radius: var(--radius-small);
       }
-      textarea::-webkit-scrollbar-thumb:hover {
+      ::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
       }
     </style>
@@ -119,27 +122,26 @@
         </section>
 
         <!-- Right Panel: Controls & Inputs -->
-        <section class="w-full lg:w-[400px] flex flex-col gap-6 max-h-[800px]">
-            <div class="bg-white p-6 rounded-large border-4 border-neutral-900 shadow-custom flex-1 flex flex-col">
+        <section class="w-full lg:w-[450px] flex flex-col gap-6 max-h-[800px]">
+            <!-- Names Input -->
+            <div class="bg-white p-6 rounded-large border-4 border-neutral-900 shadow-custom flex flex-col">
                 <div class="mb-4">
                     <h2 class="font-heading text-2xl text-neutral-900 mb-2">Entries</h2>
-                    <p class="text-neutral-600 text-sm mb-4">
-                        Enter names below (one per line).<br>
-                        To change probability, add <strong>:weight</strong> after the name.<br>
-                        <em>Example: Alice:5 (5x more likely to win than a normal entry)</em>
+                    <p class="text-neutral-600 text-sm">
+                        Enter names below (one per line). Probabilities can be adjusted in the panel below.
                     </p>
                 </div>
                 
-                <textarea id="entriesInput" class="flex-1 w-full min-h-[300px] p-4 bg-neutral-50 border-2 border-neutral-300 rounded-small font-body text-neutral-800 focus:outline-none focus:border-neutral-900 focus:ring-2 focus:ring-neutral-200 resize-none transition-colors" spellcheck="false">
-Alice:1
-Bob:1
-Charlie:5
-Diana:1
-Eve:10</textarea>
+                <textarea id="entriesInput" class="w-full h-[200px] p-4 bg-neutral-50 border-2 border-neutral-300 rounded-small font-body text-neutral-800 focus:outline-none focus:border-neutral-900 focus:ring-2 focus:ring-neutral-200 resize-none transition-colors" spellcheck="false">
+Alice
+Bob
+Charlie
+Diana
+Eve</textarea>
                 
-                <div class="mt-6 flex gap-4">
+                <div class="mt-4 flex gap-4">
                     <button id="updateBtn" class="flex-1 bg-neutral-900 text-white font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg">
-                        Update Wheel
+                        Update List
                     </button>
                     <button id="shuffleBtn" class="bg-white text-neutral-900 font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg" title="Shuffle Entries">
                         Shuffle
@@ -147,11 +149,22 @@ Eve:10</textarea>
                 </div>
             </div>
             
-            <!-- Stats Card -->
-            <div class="bg-neutral-100 p-5 rounded-large border-4 border-neutral-900 shadow-custom">
-                <h3 class="font-heading text-lg text-neutral-900 mb-3">Current Probabilities</h3>
-                <div id="statsContainer" class="max-h-[150px] overflow-y-auto text-sm text-neutral-700 space-y-1">
-                    <!-- Stats populated by JS -->
+            <!-- Probability Editor (Collapsible) -->
+            <div class="bg-neutral-100 p-5 rounded-large border-4 border-neutral-900 shadow-custom flex flex-col transition-all">
+                <div id="toggleProbabilityBtn" class="flex justify-between items-center cursor-pointer group select-none">
+                    <h3 class="font-heading text-xl text-neutral-900 group-hover:text-neutral-600 transition-colors">Adjust Probabilities</h3>
+                    <div class="flex items-center gap-3">
+                        <span id="probabilityLabels" class="text-xs text-neutral-500 font-body transition-opacity duration-200">Weight / Chance</span>
+                        <div id="toggleIcon" class="w-8 h-8 flex items-center justify-center bg-white border-2 border-neutral-900 rounded-small font-heading text-xl shadow-[2px_2px_0px_rgb(20,20,20)] group-hover:translate-y-[1px] group-hover:translate-x-[1px] group-hover:shadow-[1px_1px_0px_rgb(20,20,20)] transition-all">
+                            -
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="probabilityContent" class="flex flex-col overflow-hidden transition-all duration-300 mt-4 h-auto max-h-[300px]">
+                    <div id="probabilityEditor" class="flex-1 overflow-y-auto space-y-2 pr-2">
+                        <!-- Editor rows populated by JS -->
+                    </div>
                 </div>
             </div>
         </section>
@@ -183,16 +196,23 @@ Eve:10</textarea>
             const updateBtn = document.getElementById('updateBtn');
             const shuffleBtn = document.getElementById('shuffleBtn');
             const spinBtn = document.getElementById('spinBtn');
-            const statsContainer = document.getElementById('statsContainer');
+            const probabilityEditor = document.getElementById('probabilityEditor');
             const winnerModal = document.getElementById('winnerModal');
             const winnerModalContent = document.getElementById('winnerModalContent');
             const winnerText = document.getElementById('winnerText');
             const closeModalBtn = document.getElementById('closeModalBtn');
+            
+            // Collapsible Panel Elements
+            const toggleProbabilityBtn = document.getElementById('toggleProbabilityBtn');
+            const probabilityContent = document.getElementById('probabilityContent');
+            const toggleIcon = document.getElementById('toggleIcon');
+            const probabilityLabels = document.getElementById('probabilityLabels');
 
             // State
             let entries = [];
             let currentRotation = 0; // in radians
             let isSpinning = false;
+            let isPanelOpen = true;
             
             // Vibrant color palette for the wheel
             const colors = [
@@ -210,6 +230,24 @@ Eve:10</textarea>
             spinBtn.addEventListener('click', spinWheel);
             closeModalBtn.addEventListener('click', closeModal);
             
+            // Collapsible Panel Toggle Logic
+            toggleProbabilityBtn.addEventListener('click', () => {
+                isPanelOpen = !isPanelOpen;
+                if (isPanelOpen) {
+                    probabilityContent.style.maxHeight = '300px';
+                    probabilityContent.style.marginTop = '1rem';
+                    probabilityContent.style.opacity = '1';
+                    toggleIcon.textContent = '-';
+                    probabilityLabels.style.opacity = '1';
+                } else {
+                    probabilityContent.style.maxHeight = '0px';
+                    probabilityContent.style.marginTop = '0px';
+                    probabilityContent.style.opacity = '0';
+                    toggleIcon.textContent = '+';
+                    probabilityLabels.style.opacity = '0';
+                }
+            });
+            
             // Functions
             function parseEntries() {
                 if (isSpinning) return;
@@ -217,26 +255,22 @@ Eve:10</textarea>
                 const text = entriesInput.value;
                 const lines = text.split('\n').filter(line => line.trim() !== '');
                 
-                entries = lines.map(line => {
-                    const parts = line.split(':');
-                    const name = parts[0].trim();
-                    let weight = 1;
-                    
-                    if (parts.length > 1) {
-                        const parsedWeight = parseFloat(parts[1]);
-                        if (!isNaN(parsedWeight) && parsedWeight > 0) {
-                            weight = parsedWeight;
-                        }
-                    }
-                    
-                    return { name, weight };
+                // Store old entries to preserve weights
+                const oldEntriesMap = new Map();
+                entries.forEach(e => oldEntriesMap.set(e.name, e.weight));
+                
+                entries = lines.map(name => {
+                    const cleanName = name.trim();
+                    // Preserve old weight if it exists, otherwise default to 1
+                    const weight = oldEntriesMap.has(cleanName) ? oldEntriesMap.get(cleanName) : 1;
+                    return { name: cleanName, weight: weight };
                 });
                 
                 if (entries.length === 0) {
                     entries = [{ name: 'Add some names!', weight: 1 }];
                 }
                 
-                updateStats();
+                renderProbabilityEditor();
                 drawWheel();
             }
             
@@ -250,37 +284,72 @@ Eve:10</textarea>
                 }
                 
                 // Update textarea to reflect new order
-                entriesInput.value = entries.map(e => e.weight !== 1 ? `${e.name}:${e.weight}` : e.name).join('\n');
+                entriesInput.value = entries.map(e => e.name).join('\n');
                 
-                updateStats();
+                renderProbabilityEditor();
                 drawWheel();
             }
             
-            function updateStats() {
+            function renderProbabilityEditor() {
+                probabilityEditor.innerHTML = '';
                 const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0);
                 
-                statsContainer.innerHTML = '';
-                
-                // Sort by weight descending for stats display
-                const sortedEntries = [...entries].sort((a, b) => b.weight - a.weight);
-                
-                sortedEntries.forEach(entry => {
-                    const percentage = ((entry.weight / totalWeight) * 100).toFixed(1);
+                entries.forEach((entry, index) => {
+                    const percentage = totalWeight > 0 ? ((entry.weight / totalWeight) * 100).toFixed(1) : 0;
                     
                     const row = document.createElement('div');
-                    row.className = 'flex justify-between items-center py-1 border-b border-neutral-200 last:border-0';
+                    row.className = 'flex items-center justify-between gap-3 bg-white p-3 rounded-small border-2 border-neutral-200 shadow-sm transition-colors hover:border-neutral-400';
                     
+                    // Name
                     const nameSpan = document.createElement('span');
-                    nameSpan.className = 'font-medium truncate pr-2';
+                    nameSpan.className = 'font-medium text-neutral-800 truncate flex-1';
                     nameSpan.textContent = entry.name;
                     
+                    // Controls Container
+                    const controlsDiv = document.createElement('div');
+                    controlsDiv.className = 'flex items-center gap-3';
+                    
+                    // Percentage Display
                     const probSpan = document.createElement('span');
-                    probSpan.className = 'whitespace-nowrap font-body bg-neutral-200 px-2 py-0.5 rounded text-xs';
-                    probSpan.textContent = `${percentage}% (w:${entry.weight})`;
+                    probSpan.className = 'text-xs font-body text-neutral-500 w-12 text-right percentage-display';
+                    probSpan.textContent = `${percentage}%`;
+                    probSpan.dataset.index = index;
+                    
+                    // Weight Input
+                    const weightInput = document.createElement('input');
+                    weightInput.type = 'number';
+                    weightInput.min = '1';
+                    weightInput.value = entry.weight;
+                    weightInput.className = 'w-16 p-1.5 border-2 border-neutral-300 rounded text-center font-body text-sm focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900';
+                    
+                    // Event listener for weight changes
+                    weightInput.addEventListener('input', (e) => {
+                        let newWeight = parseFloat(e.target.value);
+                        if (isNaN(newWeight) || newWeight < 0) newWeight = 0;
+                        
+                        entries[index].weight = newWeight;
+                        updatePercentages();
+                    });
+                    
+                    controlsDiv.appendChild(probSpan);
+                    controlsDiv.appendChild(weightInput);
                     
                     row.appendChild(nameSpan);
-                    row.appendChild(probSpan);
-                    statsContainer.appendChild(row);
+                    row.appendChild(controlsDiv);
+                    
+                    probabilityEditor.appendChild(row);
+                });
+            }
+            
+            function updatePercentages() {
+                const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0);
+                const displays = probabilityEditor.querySelectorAll('.percentage-display');
+                
+                displays.forEach(display => {
+                    const index = display.dataset.index;
+                    const entry = entries[index];
+                    const percentage = totalWeight > 0 ? ((entry.weight / totalWeight) * 100).toFixed(1) : 0;
+                    display.textContent = `${percentage}%`;
                 });
             }
             
@@ -289,7 +358,7 @@ Eve:10</textarea>
                 const height = canvas.height;
                 const centerX = width / 2;
                 const centerY = height / 2;
-                const radius = Math.min(centerX, centerY) - 10; // 10px padding
+                const radius = Math.min(centerX, centerY) - 10;
                 
                 ctx.clearRect(0, 0, width, height);
                 
@@ -317,29 +386,25 @@ Eve:10</textarea>
                     
                     // Draw slice border
                     ctx.lineWidth = 2;
-                    ctx.strokeStyle = '#171717'; // neutral-900
+                    ctx.strokeStyle = '#171717';
                     ctx.stroke();
                     
                     // Draw text
                     ctx.save();
-                    // Rotate to the center of the slice
                     ctx.rotate(startAngle + sliceAngle / 2);
                     
                     ctx.textAlign = 'right';
                     ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#171717'; // Dark text for contrast
+                    ctx.fillStyle = '#171717';
                     
-                    // Adjust font size based on number of entries and text length
                     let fontSize = entries.length > 20 ? 12 : entries.length > 10 ? 16 : 22;
                     ctx.font = `600 ${fontSize}px 'Space Mono', monospace`;
                     
-                    // Add white outline for better readability on all colors
                     ctx.lineWidth = 3;
                     ctx.strokeStyle = '#ffffff';
                     
-                    const textX = radius - 30; // Padding from edge
+                    const textX = radius - 30;
                     
-                    // Truncate text if too long
                     let displayText = entries[i].name;
                     if (displayText.length > 15) {
                         displayText = displayText.substring(0, 13) + '...';
@@ -356,10 +421,16 @@ Eve:10</textarea>
             
             function spinWheel() {
                 if (isSpinning || entries.length === 0) return;
+                
+                const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0);
+                if (totalWeight <= 0) {
+                    alert("Total probability weight must be greater than 0.");
+                    return;
+                }
+                
                 isSpinning = true;
                 
                 // 1. Determine the winner based on WEIGHTED probability
-                const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0);
                 let randomValue = Math.random() * totalWeight;
                 let winnerIndex = 0;
                 
@@ -372,29 +443,20 @@ Eve:10</textarea>
                 }
                 
                 // 2. Calculate angles
-                // The pointer is at 0 radians (right side).
-                // We want the center of the winning slice to land at 0 radians.
                 const sliceAngle = (2 * Math.PI) / entries.length;
                 const winnerCenterAngle = (winnerIndex * sliceAngle) + (sliceAngle / 2);
                 
-                // Normalize current rotation to 0-2PI
                 const currentMod = currentRotation % (2 * Math.PI);
-                
-                // Target angle within one rotation to put winner at 0 rad
-                // Since wheel rotates clockwise (increasing angle), to move a slice backwards to 0, 
-                // we need to rotate by (2PI - winnerCenterAngle)
                 const targetMod = (2 * Math.PI) - winnerCenterAngle;
                 
-                // Calculate shortest forward distance to target
                 let diff = targetMod - currentMod;
                 if (diff < 0) diff += 2 * Math.PI;
                 
-                // Add extra spins (e.g., 8 full rotations)
                 const extraSpins = 8 * 2 * Math.PI;
                 const targetRotation = currentRotation + diff + extraSpins;
                 
                 // 3. Animate
-                const duration = 5000; // 5 seconds
+                const duration = 5000;
                 const startTime = performance.now();
                 const startRotation = currentRotation;
                 
@@ -411,7 +473,6 @@ Eve:10</textarea>
                         return;
                     }
                     
-                    // Ease Out Quart function for smooth deceleration
                     const easeOut = 1 - Math.pow(1 - progress, 4);
                     
                     currentRotation = startRotation + (targetRotation - startRotation) * easeOut;
@@ -423,19 +484,44 @@ Eve:10</textarea>
                 requestAnimationFrame(animate);
             }
             
+            function triggerConfetti() {
+                const duration = 3000;
+                const end = Date.now() + duration;
+
+                (function frame() {
+                    confetti({
+                        particleCount: 5,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: colors
+                    });
+                    confetti({
+                        particleCount: 5,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: colors
+                    });
+
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                }());
+            }
+            
             function showWinner(name) {
                 winnerText.textContent = name;
                 winnerModal.classList.remove('hidden');
                 
-                // Small delay to allow display:block to apply before animating opacity
                 setTimeout(() => {
                     winnerModal.classList.remove('opacity-0');
                     winnerModalContent.classList.remove('scale-90');
                     winnerModalContent.classList.add('scale-100');
+                    
+                    // Trigger confetti after modal starts animating in
+                    triggerConfetti();
                 }, 10);
-                
-                // Optional: Trigger confetti if a library was included, 
-                // but we'll stick to the clean UI modal for now.
             }
             
             function closeModal() {
@@ -445,10 +531,9 @@ Eve:10</textarea>
                 
                 setTimeout(() => {
                     winnerModal.classList.add('hidden');
-                }, 300); // Match transition duration
+                }, 300);
             }
         });
     </script>
 </body>
 </html>
-
