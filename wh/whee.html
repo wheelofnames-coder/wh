@@ -5,105 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weighted Wheel of Names</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link id="heading-font-link" href="https://fonts.googleapis.com/css2?family=Righteous:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link id="body-font-link" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              heading: ['var(--font-heading-name)', 'cursive'],
-              body: ['var(--font-body-name)', 'monospace'],
-            },
-            spacing: {
-              base: 'var(--space-base)',
-            },
-            borderRadius: {
-              small: 'var(--radius-small)',
-              large: 'var(--radius-large)',
-            },
-            boxShadow: {
-              custom: 'var(--shadow-custom)',
-              'custom-hover': 'var(--shadow-custom-hover)',
-            },
-          }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        heading: ['var(--font-heading-name)', 'cursive'],
+                        body: ['var(--font-body-name)', 'monospace'],
+                    },
+                    spacing: {
+                        base: 'var(--space-base)',
+                    },
+                    borderRadius: {
+                        small: 'var(--radius-small)',
+                        large: 'var(--radius-large)',
+                    },
+                    boxShadow: {
+                        custom: 'var(--shadow-custom)',
+                        'custom-hover': 'var(--shadow-custom-hover)',
+                    },
+                }
+            }
         }
-      }
     </script>
-    
     <style>
-      :root {
-        /* Typography */
-        --font-heading-name: 'Righteous';
-        --font-body-name: 'Space Mono';
-        --font-heading: 'Righteous', cursive;
-        --font-body: 'Space Mono', monospace;
-        --letter-spacing-heading: 0.75px;
-        --letter-spacing-body: 0px;
-        
-        /* Spacing */
-        --space-base: 1rem;
-        
-        /* Borders */
-        --radius-small: 8px;
-        --radius-large: 16px;
-        --border-width: 3px;
-        
-        /* Shadows */
-        --shadow-color: 20 20 20;
-        --shadow-offset-x: 6px;
-        --shadow-offset-y: 6px;
-        --shadow-blur: 0px;
-        --shadow-spread: 0px;
-        --shadow-opacity: 1;
-        --shadow-custom: 6px 6px 0px rgb(var(--shadow-color));
-        --shadow-custom-hover: 2px 2px 0px rgb(var(--shadow-color));
-      }
-      
-      /* Custom Scrollbar for Textarea */
-      textarea::-webkit-scrollbar {
-        width: 8px;
-      }
-      textarea::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: var(--radius-small);
-      }
-      textarea::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: var(--radius-small);
-      }
-      textarea::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-      }
+        :root {
+            /* Typography */
+            --font-heading-name: 'Righteous';
+            --font-body-name: 'Space Mono';
+            --font-heading: 'Righteous', cursive;
+            --font-body: 'Space Mono', monospace;
+            --letter-spacing-heading: 0.75px;
+            --letter-spacing-body: 0px;
+
+            /* Spacing */
+            --space-base: 1rem;
+
+            /* Borders */
+            --radius-small: 8px;
+            --radius-large: 16px;
+            --border-width: 3px;
+
+            /* Shadows */
+            --shadow-color: 20 20 20;
+            --shadow-offset-x: 6px;
+            --shadow-offset-y: 6px;
+            --shadow-blur: 0px;
+            --shadow-spread: 0px;
+            --shadow-opacity: 1;
+            --shadow-custom: 6px 6px 0px rgb(var(--shadow-color));
+            --shadow-custom-hover: 2px 2px 0px rgb(var(--shadow-color));
+        }
+
+        /* Custom Scrollbar for Textarea */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        textarea::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: var(--radius-small);
+        }
+
+        textarea::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: var(--radius-small);
+        }
+
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
 <body class="font-body bg-neutral-50 text-neutral-900 min-h-screen flex flex-col" style="height: auto; min-height: 100%;">
-
+    <!-- Header -->
+    <header class="bg-white border-b-4 border-neutral-900 py-4 px-6 shadow-custom mb-8">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center text-white font-heading text-xl">W</div>
+                <h1 class="font-heading text-2xl md:text-3xl text-neutral-900 tracking-wide">Weighted Wheel</h1>
+            </div>
+            <p class="hidden md:block text-neutral-500 text-sm">Equal slices, custom probabilities.</p>
+        </div>
+    </header>
 
     <!-- Main Content -->
     <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-12 flex flex-col lg:flex-row gap-8 lg:gap-12">
-        
         <!-- Left Panel: The Wheel -->
         <section class="flex-1 flex flex-col items-center justify-center bg-white p-6 rounded-large border-4 border-neutral-900 shadow-custom max-h-[800px]">
             <h2 class="font-heading text-xl text-neutral-800 mb-6 w-full text-center">Click center to spin!</h2>
-            
             <div class="relative w-full max-w-[500px] aspect-square">
                 <!-- Canvas for Wheel -->
                 <canvas id="wheelCanvas" width="500" height="500" class="w-full h-full rounded-full border-4 border-neutral-900 shadow-inner"></canvas>
-                
                 <!-- Center Spin Button -->
                 <button id="spinBtn" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 md:w-24 md:h-24 bg-white border-4 border-neutral-900 rounded-full shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all flex items-center justify-center z-20 cursor-pointer group">
                     <span class="font-heading text-xl md:text-2xl text-neutral-900 group-hover:scale-110 transition-transform">SPIN</span>
                 </button>
-                
-                <!-- Pointer (Right Side) -->
-                <div class="absolute top-1/2 right-[-10px] md:right-[-20px] -translate-y-1/2 z-30 drop-shadow-md">
-                    <!-- CSS Triangle pointing left -->
-                    <div class="w-0 h-0 border-y-[15px] border-y-transparent border-r-[30px] border-r-neutral-900"></div>
-                    <div class="w-0 h-0 border-y-[10px] border-y-transparent border-r-[20px] border-r-white absolute top-[5px] left-[6px]"></div>
-                </div>
             </div>
         </section>
 
@@ -112,25 +111,12 @@
             <div class="bg-white p-6 rounded-large border-4 border-neutral-900 shadow-custom flex-1 flex flex-col">
                 <div class="mb-4">
                     <h2 class="font-heading text-2xl text-neutral-900 mb-2">Entries</h2>
-                    <p class="text-neutral-600 text-sm mb-4">
-                        Enter names below (one per line).
-                    </p>
+                    <p class="text-neutral-600 text-sm mb-4"> Enter names below (one per line).<br> To change probability, add <strong>:weight</strong> after the name.<br> <em>Example: Alice:5 (5x more likely to win than a normal entry)</em> </p>
                 </div>
-                
-                <textarea id="entriesInput" class="flex-1 w-full min-h-[300px] p-4 bg-neutral-50 border-2 border-neutral-300 rounded-small font-body text-neutral-800 focus:outline-none focus:border-neutral-900 focus:ring-2 focus:ring-neutral-200 resize-none transition-colors" spellcheck="false">
-Alice
-Bob
-Charlie
-Diana
-Eve</textarea>
-                
+                <textarea id="entriesInput" class="flex-1 w-full min-h-[300px] p-4 bg-neutral-50 border-2 border-neutral-300 rounded-small font-body text-neutral-800 focus:outline-none focus:border-neutral-900 focus:ring-2 focus:ring-neutral-200 resize-none transition-colors" spellcheck="false"> Alice:1 Bob:1 Charlie:5 Diana:1 Eve:10</textarea>
                 <div class="mt-6 flex gap-4">
-                    <button id="updateBtn" class="flex-1 bg-neutral-900 text-white font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg">
-                        Update Wheel
-                    </button>
-                    <button id="shuffleBtn" class="bg-white text-neutral-900 font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg" title="Shuffle Entries">
-                        Shuffle
-                    </button>
+                    <button id="updateBtn" class="flex-1 bg-neutral-900 text-white font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg"> Update Wheel </button>
+                    <button id="shuffleBtn" class="bg-white text-neutral-900 font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg" title="Shuffle Entries"> Shuffle </button>
                 </div>
             </div>
         </section>
@@ -141,22 +127,16 @@ Eve</textarea>
         <div class="bg-white p-8 md:p-12 rounded-large border-4 border-neutral-900 shadow-[12px_12px_0px_rgb(20,20,20)] max-w-lg w-full text-center transform scale-90 transition-transform duration-300" id="winnerModalContent">
             <h2 class="font-heading text-3xl md:text-4xl text-neutral-900 mb-2">We have a winner!</h2>
             <p class="text-neutral-500 mb-8">The wheel has spoken.</p>
-            
             <div class="py-6 px-4 bg-neutral-100 rounded-small border-2 border-neutral-200 mb-8">
                 <span id="winnerText" class="font-heading text-4xl md:text-5xl text-neutral-900 break-words">Winner Name</span>
             </div>
-            
-            <button id="closeModalBtn" class="bg-neutral-900 text-white font-heading py-3 px-8 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-xl w-full md:w-auto">
-                Awesome!
-            </button>
+            <button id="closeModalBtn" class="bg-neutral-900 text-white font-heading py-3 px-8 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-xl w-full md:w-auto"> Awesome! </button>
         </div>
     </div>
 
     <!-- Application Logic -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // DOM Elements
             const canvas = document.getElementById('wheelCanvas');
             const ctx = canvas.getContext('2d');
-            const entriesInput = document.getElementById('entriesInput');
-            const updateBtn = document.get
+            const entriesInput = document.getElementBy
