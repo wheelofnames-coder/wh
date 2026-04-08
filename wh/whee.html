@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,16 +81,6 @@
 </head>
 <body class="font-body bg-neutral-50 text-neutral-900 min-h-screen flex flex-col" style="height: auto; min-height: 100%;">
 
-    <!-- Header -->
-    <header class="bg-white border-b-4 border-neutral-900 py-4 px-6 shadow-custom mb-8">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center text-white font-heading text-xl">W</div>
-                <h1 class="font-heading text-2xl md:text-3xl text-neutral-900 tracking-wide">Weighted Wheel</h1>
-            </div>
-            <p class="hidden md:block text-neutral-500 text-sm">Equal slices, custom probabilities.</p>
-        </div>
-    </header>
 
     <!-- Main Content -->
     <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-12 flex flex-col lg:flex-row gap-8 lg:gap-12">
@@ -124,18 +113,16 @@
                 <div class="mb-4">
                     <h2 class="font-heading text-2xl text-neutral-900 mb-2">Entries</h2>
                     <p class="text-neutral-600 text-sm mb-4">
-                        Enter names below (one per line).<br>
-                        To change probability, add <strong>:weight</strong> after the name.<br>
-                        <em>Example: Alice:5 (5x more likely to win than a normal entry)</em>
+                        Enter names below (one per line).
                     </p>
                 </div>
                 
                 <textarea id="entriesInput" class="flex-1 w-full min-h-[300px] p-4 bg-neutral-50 border-2 border-neutral-300 rounded-small font-body text-neutral-800 focus:outline-none focus:border-neutral-900 focus:ring-2 focus:ring-neutral-200 resize-none transition-colors" spellcheck="false">
-Alice:1
-Bob:1
-Charlie:5
-Diana:1
-Eve:10</textarea>
+Alice
+Bob
+Charlie
+Diana
+Eve</textarea>
                 
                 <div class="mt-6 flex gap-4">
                     <button id="updateBtn" class="flex-1 bg-neutral-900 text-white font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg">
@@ -144,14 +131,6 @@ Eve:10</textarea>
                     <button id="shuffleBtn" class="bg-white text-neutral-900 font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg" title="Shuffle Entries">
                         Shuffle
                     </button>
-                </div>
-            </div>
-            
-            <!-- Stats Card -->
-            <div class="bg-neutral-100 p-5 rounded-large border-4 border-neutral-900 shadow-custom">
-                <h3 class="font-heading text-lg text-neutral-900 mb-3">Current Probabilities</h3>
-                <div id="statsContainer" class="max-h-[150px] overflow-y-auto text-sm text-neutral-700 space-y-1">
-                    <!-- Stats populated by JS -->
                 </div>
             </div>
         </section>
@@ -180,274 +159,4 @@ Eve:10</textarea>
             const canvas = document.getElementById('wheelCanvas');
             const ctx = canvas.getContext('2d');
             const entriesInput = document.getElementById('entriesInput');
-            const updateBtn = document.getElementById('updateBtn');
-            const shuffleBtn = document.getElementById('shuffleBtn');
-            const spinBtn = document.getElementById('spinBtn');
-            const statsContainer = document.getElementById('statsContainer');
-            const winnerModal = document.getElementById('winnerModal');
-            const winnerModalContent = document.getElementById('winnerModalContent');
-            const winnerText = document.getElementById('winnerText');
-            const closeModalBtn = document.getElementById('closeModalBtn');
-
-            // State
-            let entries = [];
-            let currentRotation = 0; // in radians
-            let isSpinning = false;
-            
-            // Vibrant color palette for the wheel
-            const colors = [
-                '#FF6B6B', '#4ECDC4', '#FFE66D', '#FF9F1C', 
-                '#2AB7CA', '#F0B67F', '#FE4A90', '#55DDE0', 
-                '#F6E8EA', '#C18C5D', '#49DCB1', '#8E7DBE'
-            ];
-
-            // Initialize
-            parseEntries();
-            
-            // Event Listeners
-            updateBtn.addEventListener('click', parseEntries);
-            shuffleBtn.addEventListener('click', shuffleEntries);
-            spinBtn.addEventListener('click', spinWheel);
-            closeModalBtn.addEventListener('click', closeModal);
-            
-            // Functions
-            function parseEntries() {
-                if (isSpinning) return;
-                
-                const text = entriesInput.value;
-                const lines = text.split('\n').filter(line => line.trim() !== '');
-                
-                entries = lines.map(line => {
-                    const parts = line.split(':');
-                    const name = parts[0].trim();
-                    let weight = 1;
-                    
-                    if (parts.length > 1) {
-                        const parsedWeight = parseFloat(parts[1]);
-                        if (!isNaN(parsedWeight) && parsedWeight > 0) {
-                            weight = parsedWeight;
-                        }
-                    }
-                    
-                    return { name, weight };
-                });
-                
-                if (entries.length === 0) {
-                    entries = [{ name: 'Add some names!', weight: 1 }];
-                }
-                
-                updateStats();
-                drawWheel();
-            }
-            
-            function shuffleEntries() {
-                if (isSpinning) return;
-                
-                // Fisher-Yates shuffle
-                for (let i = entries.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [entries[i], entries[j]] = [entries[j], entries[i]];
-                }
-                
-                // Update textarea to reflect new order
-                entriesInput.value = entries.map(e => e.weight !== 1 ? `${e.name}:${e.weight}` : e.name).join('\n');
-                
-                updateStats();
-                drawWheel();
-            }
-            
-            function updateStats() {
-                const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0);
-                
-                statsContainer.innerHTML = '';
-                
-                // Sort by weight descending for stats display
-                const sortedEntries = [...entries].sort((a, b) => b.weight - a.weight);
-                
-                sortedEntries.forEach(entry => {
-                    const percentage = ((entry.weight / totalWeight) * 100).toFixed(1);
-                    
-                    const row = document.createElement('div');
-                    row.className = 'flex justify-between items-center py-1 border-b border-neutral-200 last:border-0';
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'font-medium truncate pr-2';
-                    nameSpan.textContent = entry.name;
-                    
-                    const probSpan = document.createElement('span');
-                    probSpan.className = 'whitespace-nowrap font-body bg-neutral-200 px-2 py-0.5 rounded text-xs';
-                    probSpan.textContent = `${percentage}% (w:${entry.weight})`;
-                    
-                    row.appendChild(nameSpan);
-                    row.appendChild(probSpan);
-                    statsContainer.appendChild(row);
-                });
-            }
-            
-            function drawWheel() {
-                const width = canvas.width;
-                const height = canvas.height;
-                const centerX = width / 2;
-                const centerY = height / 2;
-                const radius = Math.min(centerX, centerY) - 10; // 10px padding
-                
-                ctx.clearRect(0, 0, width, height);
-                
-                if (entries.length === 0) return;
-                
-                // CRITICAL: Every slice gets exactly the same visual angle
-                const sliceAngle = (2 * Math.PI) / entries.length;
-                
-                ctx.save();
-                ctx.translate(centerX, centerY);
-                ctx.rotate(currentRotation);
-                
-                for (let i = 0; i < entries.length; i++) {
-                    const startAngle = i * sliceAngle;
-                    const endAngle = (i + 1) * sliceAngle;
-                    
-                    // Draw slice background
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.arc(0, 0, radius, startAngle, endAngle);
-                    ctx.closePath();
-                    
-                    ctx.fillStyle = colors[i % colors.length];
-                    ctx.fill();
-                    
-                    // Draw slice border
-                    ctx.lineWidth = 2;
-                    ctx.strokeStyle = '#171717'; // neutral-900
-                    ctx.stroke();
-                    
-                    // Draw text
-                    ctx.save();
-                    // Rotate to the center of the slice
-                    ctx.rotate(startAngle + sliceAngle / 2);
-                    
-                    ctx.textAlign = 'right';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#171717'; // Dark text for contrast
-                    
-                    // Adjust font size based on number of entries and text length
-                    let fontSize = entries.length > 20 ? 12 : entries.length > 10 ? 16 : 22;
-                    ctx.font = `600 ${fontSize}px 'Space Mono', monospace`;
-                    
-                    // Add white outline for better readability on all colors
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#ffffff';
-                    
-                    const textX = radius - 30; // Padding from edge
-                    
-                    // Truncate text if too long
-                    let displayText = entries[i].name;
-                    if (displayText.length > 15) {
-                        displayText = displayText.substring(0, 13) + '...';
-                    }
-                    
-                    ctx.strokeText(displayText, textX, 0);
-                    ctx.fillText(displayText, textX, 0);
-                    
-                    ctx.restore();
-                }
-                
-                ctx.restore();
-            }
-            
-            function spinWheel() {
-                if (isSpinning || entries.length === 0) return;
-                isSpinning = true;
-                
-                // 1. Determine the winner based on WEIGHTED probability
-                const totalWeight = entries.reduce((sum, e) => sum + e.weight, 0);
-                let randomValue = Math.random() * totalWeight;
-                let winnerIndex = 0;
-                
-                for (let i = 0; i < entries.length; i++) {
-                    randomValue -= entries[i].weight;
-                    if (randomValue <= 0) {
-                        winnerIndex = i;
-                        break;
-                    }
-                }
-                
-                // 2. Calculate angles
-                // The pointer is at 0 radians (right side).
-                // We want the center of the winning slice to land at 0 radians.
-                const sliceAngle = (2 * Math.PI) / entries.length;
-                const winnerCenterAngle = (winnerIndex * sliceAngle) + (sliceAngle / 2);
-                
-                // Normalize current rotation to 0-2PI
-                const currentMod = currentRotation % (2 * Math.PI);
-                
-                // Target angle within one rotation to put winner at 0 rad
-                // Since wheel rotates clockwise (increasing angle), to move a slice backwards to 0, 
-                // we need to rotate by (2PI - winnerCenterAngle)
-                const targetMod = (2 * Math.PI) - winnerCenterAngle;
-                
-                // Calculate shortest forward distance to target
-                let diff = targetMod - currentMod;
-                if (diff < 0) diff += 2 * Math.PI;
-                
-                // Add extra spins (e.g., 8 full rotations)
-                const extraSpins = 8 * 2 * Math.PI;
-                const targetRotation = currentRotation + diff + extraSpins;
-                
-                // 3. Animate
-                const duration = 5000; // 5 seconds
-                const startTime = performance.now();
-                const startRotation = currentRotation;
-                
-                function animate(currentTime) {
-                    const elapsed = currentTime - startTime;
-                    let progress = elapsed / duration;
-                    
-                    if (progress >= 1) {
-                        progress = 1;
-                        currentRotation = targetRotation;
-                        drawWheel();
-                        isSpinning = false;
-                        showWinner(entries[winnerIndex].name);
-                        return;
-                    }
-                    
-                    // Ease Out Quart function for smooth deceleration
-                    const easeOut = 1 - Math.pow(1 - progress, 4);
-                    
-                    currentRotation = startRotation + (targetRotation - startRotation) * easeOut;
-                    drawWheel();
-                    
-                    requestAnimationFrame(animate);
-                }
-                
-                requestAnimationFrame(animate);
-            }
-            
-            function showWinner(name) {
-                winnerText.textContent = name;
-                winnerModal.classList.remove('hidden');
-                
-                // Small delay to allow display:block to apply before animating opacity
-                setTimeout(() => {
-                    winnerModal.classList.remove('opacity-0');
-                    winnerModalContent.classList.remove('scale-90');
-                    winnerModalContent.classList.add('scale-100');
-                }, 10);
-                
-                // Optional: Trigger confetti if a library was included, 
-                // but we'll stick to the clean UI modal for now.
-            }
-            
-            function closeModal() {
-                winnerModal.classList.add('opacity-0');
-                winnerModalContent.classList.remove('scale-100');
-                winnerModalContent.classList.add('scale-90');
-                
-                setTimeout(() => {
-                    winnerModal.classList.add('hidden');
-                }, 300); // Match transition duration
-            }
-        });
-    </script>
-</body>
-</html>
+            const updateBtn = document.get
