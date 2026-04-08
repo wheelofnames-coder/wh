@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weighted Wheel of Names</title>
+    <title>Wheel of Names</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Confetti Library -->
@@ -90,9 +90,9 @@
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center text-white font-heading text-xl">W</div>
-                <h1 class="font-heading text-2xl md:text-3xl text-neutral-900 tracking-wide">Weighted Wheel</h1>
+                <h1 class="font-heading text-2xl md:text-3xl text-neutral-900 tracking-wide">Wheel of Names</h1>
             </div>
-            <p class="hidden md:block text-neutral-500 text-sm">Equal slices, custom probabilities.</p>
+            <p class="hidden md:block text-neutral-500 text-sm"><u>Buy us a Coffee!</u></p>
         </div>
     </header>
 
@@ -128,7 +128,7 @@
                 <div class="mb-4">
                     <h2 class="font-heading text-2xl text-neutral-900 mb-2">Entries</h2>
                     <p class="text-neutral-600 text-sm">
-                        Enter names below (one per line). Probabilities can be adjusted in the panel below.
+                        Enter names below (one per line).
                     </p>
                 </div>
                 
@@ -152,8 +152,9 @@ Eve</textarea>
             <!-- Probability Editor (Collapsible) -->
             <div class="bg-neutral-100 p-5 rounded-large border-4 border-neutral-900 shadow-custom flex flex-col transition-all">
                 <div id="toggleProbabilityBtn" class="flex justify-between items-center cursor-pointer group select-none">
-                    <h3 class="font-heading text-xl text-neutral-900 group-hover:text-neutral-600 transition-colors">Adjust Probabilities</h3>
+                    <h3 style="text-align: center;" class="font-heading text-xl text-neutral-900 group-hover:text-neutral-600 transition-colors">Privacy Policy</h3>
                     <div class="flex items-center gap-3">
+                        <p class="text-neutral-600 text-sm">We are committed to protecting and respecting your privacy and the security of your data. We comply with GDPR, CCPA, SB 190, SB 1392, and we closely monitor changes to them. We follow industry best practices for data encryption and backups.</p>
                         <span id="probabilityLabels" class="text-xs text-neutral-500 font-body transition-opacity duration-200">Weight / Chance</span>
                         <div id="toggleIcon" class="w-8 h-8 flex items-center justify-center bg-white border-2 border-neutral-900 rounded-small font-heading text-xl shadow-[2px_2px_0px_rgb(20,20,20)] group-hover:translate-y-[1px] group-hover:translate-x-[1px] group-hover:shadow-[1px_1px_0px_rgb(20,20,20)] transition-all">
                             -
