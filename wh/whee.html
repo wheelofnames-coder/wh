@@ -152,17 +152,19 @@ Eve</textarea>
             <!-- Probability Editor (Collapsible) -->
             <div class="bg-neutral-100 p-5 rounded-large border-4 border-neutral-900 shadow-custom flex flex-col transition-all">
                 <div id="toggleProbabilityBtn" class="flex justify-between items-center cursor-pointer group select-none">
-                    <h3 style="text-align: center;" class="font-heading text-xl text-neutral-900 group-hover:text-neutral-600 transition-colors">Privacy Policy</h3>
+                    <h3 class="font-heading text-xl text-neutral-900 group-hover:text-neutral-600 transition-colors">Privacy Policy</h3>
                     <div class="flex items-center gap-3">
-
-                        <span id="probabilityLabels" class="text-xs text-neutral-500 font-body transition-opacity duration-200">Weight / Chance</span>
+                        <span id="probabilityLabels" class="text-xs text-neutral-500 font-body transition-opacity duration-200">Terms / Conditions</span>
                         <div id="toggleIcon" class="w-8 h-8 flex items-center justify-center bg-white border-2 border-neutral-900 rounded-small font-heading text-xl shadow-[2px_2px_0px_rgb(20,20,20)] group-hover:translate-y-[1px] group-hover:translate-x-[1px] group-hover:shadow-[1px_1px_0px_rgb(20,20,20)] transition-all">
+                            -
                         </div>
                     </div>
                 </div>
                 
                 <div id="probabilityContent" class="flex flex-col overflow-hidden transition-all duration-300 mt-4 h-auto max-h-[300px]">
-                     <p>We are committed to protecting and respecting your privacy and the security of your data. We comply with GDPR, CCPA, SB 190, SB 1392, and we closely monitor changes to them. We follow industry best practices for data encryption and backups.</p>
+                    <p>We are committed to protecting and respecting your privacy and the security of your data. We comply with GDPR, CCPA, SB 190, SB 1392, and we closely monitor changes to them. We follow industry best practices for data encryption and backups. How We Guarantee Randomness: To ensure genuinely unpredictable results, this site does not use the standard Math.random() function. Instead, the wheel's physics are driven by crypto.getRandomValues(), a specialized, high-security function built into modern web browsers. This cryptographically secure function uses high-entropy sources from your operating system, like hardware timings, mouse movements, and keyboard delays, to generate truly unpredictable results.
+
+This secure random number isn't just used to pick a winner from a list. It's used within the physics simulation of the wheel, ensuring the outcome is genuinely random and impossible to predict.</p>
                     <div id="probabilityEditor" class="flex-1 overflow-y-auto space-y-2 pr-2">
                         <!-- Editor rows populated by JS -->
                     </div>
@@ -173,17 +175,22 @@ Eve</textarea>
 
     <!-- Winner Modal Overlay -->
     <div id="winnerModal" class="fixed inset-0 bg-neutral-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white p-8 md:p-12 rounded-large border-4 border-neutral-900 shadow-[12px_12px_0px_rgb(20,20,20)] max-w-lg w-full text-center transform scale-90 transition-transform duration-300" id="winnerModalContent">
+        <div class="bg-white p-8 md:p-10 rounded-large border-4 border-neutral-900 shadow-[12px_12px_0px_rgb(20,20,20)] max-w-lg w-full text-center transform scale-90 transition-transform duration-300" id="winnerModalContent">
             <h2 class="font-heading text-3xl md:text-4xl text-neutral-900 mb-2">We have a winner!</h2>
-            <p class="text-neutral-500 mb-8">The wheel has spoken.</p>
+            <p class="text-neutral-500 mb-6">The wheel has spoken.</p>
             
             <div class="py-6 px-4 bg-neutral-100 rounded-small border-2 border-neutral-200 mb-8">
                 <span id="winnerText" class="font-heading text-4xl md:text-5xl text-neutral-900 break-words">Winner Name</span>
             </div>
             
-            <button id="closeModalBtn" class="bg-neutral-900 text-white font-heading py-3 px-8 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-xl w-full md:w-auto">
-                Awesome!
-            </button>
+            <div class="flex flex-col sm:flex-row gap-4 w-full">
+                <button id="closeModalBtn" class="flex-1 bg-white text-neutral-900 font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg">
+                    Keep on Wheel
+                </button>
+                <button id="removeWinnerBtn" class="flex-1 bg-neutral-900 text-white font-heading py-3 px-4 rounded-small border-2 border-neutral-900 shadow-custom hover:shadow-custom-hover hover:translate-y-[4px] hover:translate-x-[4px] transition-all text-lg">
+                    Remove Winner
+                </button>
+            </div>
         </div>
     </div>
 
@@ -202,6 +209,7 @@ Eve</textarea>
             const winnerModalContent = document.getElementById('winnerModalContent');
             const winnerText = document.getElementById('winnerText');
             const closeModalBtn = document.getElementById('closeModalBtn');
+            const removeWinnerBtn = document.getElementById('removeWinnerBtn');
             
             // Collapsible Panel Elements
             const toggleProbabilityBtn = document.getElementById('toggleProbabilityBtn');
@@ -214,6 +222,7 @@ Eve</textarea>
             let currentRotation = 0; // in radians
             let isSpinning = false;
             let isPanelOpen = true;
+            let currentWinnerIndex = -1;
             
             // Vibrant color palette for the wheel
             const colors = [
@@ -230,6 +239,30 @@ Eve</textarea>
             shuffleBtn.addEventListener('click', shuffleEntries);
             spinBtn.addEventListener('click', spinWheel);
             closeModalBtn.addEventListener('click', closeModal);
+            
+            // Remove Winner Logic
+            removeWinnerBtn.addEventListener('click', () => {
+                if (currentWinnerIndex > -1 && currentWinnerIndex < entries.length) {
+                    // Remove the winner from the entries array
+                    entries.splice(currentWinnerIndex, 1);
+                    
+                    // Update the textarea to reflect the removed entry
+                    entriesInput.value = entries.map(e => e.name).join('\n');
+                    
+                    // Handle case where all entries are removed
+                    if (entries.length === 0) {
+                        entries = [{ name: 'Add some names!', weight: 1 }];
+                        entriesInput.value = '';
+                    }
+                    
+                    // Re-render the UI and wheel
+                    renderProbabilityEditor();
+                    drawWheel();
+                    
+                    // Close the modal
+                    closeModal();
+                }
+            });
             
             // Collapsible Panel Toggle Logic
             toggleProbabilityBtn.addEventListener('click', () => {
@@ -442,6 +475,9 @@ Eve</textarea>
                         break;
                     }
                 }
+                
+                // Store the winner index for potential deletion
+                currentWinnerIndex = winnerIndex;
                 
                 // 2. Calculate angles
                 const sliceAngle = (2 * Math.PI) / entries.length;
